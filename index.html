@@ -1,356 +1,546 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, TrendingUp, Home, Calendar, DollarSign, Share2, Download, Check } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sri Aadya Nilaya - Maintenance Expense Tracker">
+    <meta name="theme-color" content="#111827">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Sri Aadya">
+    <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%238b5cf6' width='192' height='192'/><text x='50%' y='50%' font-size='100' fill='white' text-anchor='middle' dy='.3em'>🏘️</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%238b5cf6' width='192' height='192'/><text x='50%' y='50%' font-size='100' fill='white' text-anchor='middle' dy='.3em'>🏘️</text></svg>">
+    <title>Sri Aadya Nilaya - Maintenance Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #111827 0%, #1e1b4b 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        .container { max-width: 100%; margin: 0; padding: 16px; padding-bottom: 100px; }
+        
+        .header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+        }
+        .header h1 { font-size: 22px; margin-bottom: 2px; font-weight: 700; }
+        .header h2 { font-size: 14px; opacity: 0.9; margin-bottom: 4px; font-weight: 500; }
+        .header p { font-size: 12px; opacity: 0.85; }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 16px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border-left: 4px solid #8b5cf6;
+        }
+        .card.success { border-left-color: #10b981; }
+        .card.danger { border-left-color: #ef4444; }
+        .card.warning { border-left-color: #f59e0b; }
+        
+        .card-label { font-size: 11px; opacity: 0.8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-value { font-size: 24px; font-weight: bold; }
+        .card-value.success { color: #10b981; }
+        .card-value.danger { color: #ef4444; }
+        
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .tab-btn {
+            flex: 1;
+            min-width: 90px;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            border-color: transparent;
+        }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .section { margin-bottom: 20px; }
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 6px;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+        }
+        .form-input::placeholder { color: rgba(255,255,255,0.5); }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            border: none;
+            color: #fff;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 15px;
+            margin-top: 8px;
+            transition: transform 0.2s;
+        }
+        .btn:active { transform: scale(0.98); }
+        
+        .expense-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .apt-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .apt-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 14px;
+            border-radius: 10px;
+        }
+        .apt-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+        .apt-owner { font-size: 12px; opacity: 0.7; margin-bottom: 8px; }
+        .apt-balance { font-size: 18px; font-weight: bold; color: #ef4444; margin-bottom: 8px; }
+        .apt-balance.paid { color: #10b981; }
+        
+        .payment-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: rgba(239, 68, 68, 0.3);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            border-radius: 6px;
+            font-size: 10px;
+            margin: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .payment-badge.paid {
+            background: rgba(16, 185, 129, 0.3);
+            border-color: rgba(16, 185, 129, 0.5);
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            background: rgba(31, 41, 55, 0.95);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+        .nav-btn {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            font-size: 24px;
+            transition: color 0.3s;
+        }
+        .nav-btn.active { color: #8b5cf6; }
+        
+        .delete-btn {
+            background: #ef4444;
+            border: none;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            opacity: 0.6;
+        }
+        
+        .info-banner {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .collected-badge {
+            display: inline-block;
+            background: #10b981;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        
+        @media (max-width: 480px) {
+            .summary-grid { grid-template-columns: 1fr; }
+            .apt-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏘️ Sri Aadya Nilaya</h1>
+            <h2>Karthik Nagar - Maintenance Tracker</h2>
+            <p>10 Flats • ₹3,000 Monthly Collection</p>
+        </div>
 
-export default function MaintenanceTracker() {
-  const apartments = [
-    { id: 1, name: 'Apt 101', owner: 'Raj Kumar' },
-    { id: 2, name: 'Apt 102', owner: 'Priya Singh' },
-    { id: 3, name: 'Apt 201', owner: 'Amit Patel' },
-    { id: 4, name: 'Apt 202', owner: 'Neha Sharma' },
-    { id: 5, name: 'Apt 301', owner: 'Vikram Gupta' },
-    { id: 6, name: 'Apt 302', owner: 'Anjali Reddy' },
-    { id: 7, name: 'Apt 401', owner: 'Rajesh Verma' },
-    { id: 8, name: 'Apt 402', owner: 'Deepika Nair' },
-    { id: 9, name: 'Apt 501', owner: 'Suresh Iyer' },
-    { id: 10, name: 'Apt 502', owner: 'Kavita Desai' },
-  ];
-
-  const [expenses, setExpenses] = useState([]);
-  const [payments, setPayments] = useState({});
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
-  const [totalAmount, setTotalAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [activeTab, setActiveTab] = useState('expenses');
-
-  const addExpense = () => {
-    if (totalAmount && description) {
-      const perApt = parseFloat(totalAmount) / 10;
-      const newExpense = {
-        id: Date.now(),
-        month: selectedMonth,
-        totalAmount: parseFloat(totalAmount),
-        perApt,
-        description,
-        date: new Date().toLocaleDateString(),
-      };
-      setExpenses([...expenses, newExpense]);
-      setTotalAmount('');
-      setDescription('');
-    }
-  };
-
-  const deleteExpense = (id) => {
-    setExpenses(expenses.filter(exp => exp.id !== id));
-  };
-
-  const recordPayment = (aptId, month) => {
-    const key = `${aptId}-${month}`;
-    setPayments({ ...payments, [key]: !payments[key] });
-  };
-
-  const getMonthExpenses = (month) => {
-    return expenses.filter(exp => exp.month === month);
-  };
-
-  const getMonthTotal = (month) => {
-    return getMonthExpenses(month).reduce((sum, exp) => sum + exp.totalAmount, 0);
-  };
-
-  const getMonthlyTrend = () => {
-    const months = new Set(expenses.map(exp => exp.month));
-    return Array.from(months).sort().map(month => ({
-      month: new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
-      total: getMonthTotal(month),
-      paid: 0,
-    }));
-  };
-
-  const getAptBalance = (aptId) => {
-    let owes = 0;
-    let paid = 0;
-    expenses.forEach(exp => {
-      owes += exp.perApt;
-      if (payments[`${aptId}-${exp.month}`]) {
-        paid += exp.perApt;
-      }
-    });
-    return { owes, paid, balance: owes - paid };
-  };
-
-  const generateOwnerReport = (aptId) => {
-    const apt = apartments.find(a => a.id === aptId);
-    const { owes, paid, balance } = getAptBalance(aptId);
-    const expList = expenses.map(exp => ({
-      ...exp,
-      paid: payments[`${aptId}-${exp.month}`],
-    }));
-
-    const report = `
-APARTMENT MAINTENANCE STATEMENT
-================================
-Owner: ${apt.owner}
-Apartment: ${apt.name}
-Generated: ${new Date().toLocaleDateString()}
-
-MONTHLY BREAKDOWN:
-${expList.map(e => `${e.month}: ₹${e.perApt.toFixed(2)} - ${e.description} ${payments[`${aptId}-${e.month}`] ? '[PAID]' : '[PENDING]'}`).join('\n')}
-
-SUMMARY:
-Total Due: ₹${owes.toFixed(2)}
-Total Paid: ₹${paid.toFixed(2)}
-Outstanding: ₹${balance.toFixed(2)}
-    `;
-    return report;
-  };
-
-  const downloadReport = (aptId) => {
-    const report = generateOwnerReport(aptId);
-    const element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(report));
-    element.setAttribute('download', `${apartments.find(a => a.id === aptId).name}_statement.txt`);
-    element.style.display = 'none';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
-
-  const copyShareLink = () => {
-    const link = window.location.href;
-    navigator.clipboard.writeText(link);
-    alert('Link copied! Share this with all apartment owners.');
-  };
-
-  const totalOwed = apartments.reduce((sum, apt) => sum + getAptBalance(apt.id).balance, 0);
-  const totalCollected = apartments.reduce((sum, apt) => sum + getAptBalance(apt.id).paid, 0);
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
-              <Home className="w-6 h-6 text-white" />
+        <div class="summary-grid">
+            <div class="card">
+                <div class="card-label">Monthly Target</div>
+                <div class="card-value">₹3,000</div>
             </div>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-200 to-pink-200 bg-clip-text text-transparent">
-                Building Maintenance Tracker
-              </h1>
-              <p className="text-purple-300 text-sm">Shared expense management for 10 apartments</p>
+            <div class="card success">
+                <div class="card-label">Collected</div>
+                <div class="card-value success" id="totalCollected">₹0</div>
             </div>
-          </div>
-          <button
-            onClick={copyShareLink}
-            className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-4 py-2 rounded-lg font-semibold transition-all transform hover:scale-105"
-          >
-            <Share2 className="w-5 h-5" />
-            Share
-          </button>
-        </div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all">
-          <div className="flex items-center gap-3 mb-2">
-            <DollarSign className="w-5 h-5 text-blue-400" />
-            <span className="text-purple-200 text-sm">Total Maintenance</span>
-          </div>
-          <p className="text-3xl font-bold text-white">₹{expenses.reduce((sum, exp) => sum + exp.totalAmount, 0).toLocaleString()}</p>
-        </div>
-        <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all">
-          <div className="flex items-center gap-3 mb-2">
-            <Check className="w-5 h-5 text-green-400" />
-            <span className="text-purple-200 text-sm">Collected</span>
-          </div>
-          <p className="text-3xl font-bold text-green-400">₹{totalCollected.toLocaleString()}</p>
-        </div>
-        <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all">
-          <div className="flex items-center gap-3 mb-2">
-            <TrendingUp className="w-5 h-5 text-red-400" />
-            <span className="text-purple-200 text-sm">Outstanding</span>
-          </div>
-          <p className="text-3xl font-bold text-red-400">₹{totalOwed.toLocaleString()}</p>
-        </div>
-        <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all">
-          <div className="flex items-center gap-3 mb-2">
-            <Home className="w-5 h-5 text-orange-400" />
-            <span className="text-purple-200 text-sm">Per Apartment</span>
-          </div>
-          <p className="text-3xl font-bold text-white">₹{expenses.length > 0 ? Math.round(getMonthTotal(selectedMonth) / 10) : 0}</p>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-4 mb-6">
-        <button
-          onClick={() => setActiveTab('expenses')}
-          className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'expenses' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' : 'bg-white/10 border border-white/20 text-purple-200 hover:bg-white/15'}`}
-        >
-          Add Expenses
-        </button>
-        <button
-          onClick={() => setActiveTab('payments')}
-          className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'payments' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' : 'bg-white/10 border border-white/20 text-purple-200 hover:bg-white/15'}`}
-        >
-          Track Payments
-        </button>
-        <button
-          onClick={() => setActiveTab('reports')}
-          className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'reports' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' : 'bg-white/10 border border-white/20 text-purple-200 hover:bg-white/15'}`}
-        >
-          Owner Reports
-        </button>
-      </div>
-
-      {/* Add Expenses Tab */}
-      {activeTab === 'expenses' && (
-        <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 mb-8">
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <Plus className="w-5 h-5" />
-            Record Monthly Maintenance
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-            <input
-              type="number"
-              placeholder="Total Amount (for all 10 units)"
-              value={totalAmount}
-              onChange={(e) => setTotalAmount(e.target.value)}
-              className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-            <input
-              type="text"
-              placeholder="Description (e.g., Repair, Cleaning)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-            <button
-              onClick={addExpense}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg py-2 font-semibold transition-all transform hover:scale-105"
-            >
-              Add Expense
-            </button>
-          </div>
-
-          {/* Recent Expenses */}
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Maintenance Records</h3>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {expenses.length === 0 ? (
-                <p className="text-purple-300 text-center py-8">No expenses recorded yet</p>
-              ) : (
-                expenses.slice().reverse().map(exp => (
-                  <div key={exp.id} className="flex items-center justify-between bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-4 transition-all">
-                    <div>
-                      <p className="text-white font-semibold">{exp.description}</p>
-                      <p className="text-xs text-purple-300">{exp.month} • Per Unit: ₹{exp.perApt.toFixed(2)}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <p className="text-green-400 font-bold">₹{exp.totalAmount.toLocaleString()}</p>
-                      <button
-                        onClick={() => deleteExpense(exp.id)}
-                        className="text-red-400 hover:text-red-300 transition-colors p-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
+            <div class="card danger">
+                <div class="card-label">Pending</div>
+                <div class="card-value danger" id="totalPending">₹3,000</div>
             </div>
-          </div>
+            <div class="card warning">
+                <div class="card-label">Per Flat</div>
+                <div class="card-value">₹300</div>
+            </div>
         </div>
-      )}
 
-      {/* Track Payments Tab */}
-      {activeTab === 'payments' && (
-        <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">Payment Status</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {apartments.map(apt => {
-              const { owes, paid, balance } = getAptBalance(apt.id);
-              return (
-                <div key={apt.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <p className="text-white font-bold">{apt.name}</p>
-                      <p className="text-purple-300 text-sm">{apt.owner}</p>
-                    </div>
-                    <p className={`text-lg font-bold ${balance > 0 ? 'text-red-400' : 'text-green-400'}`}>
-                      ₹{Math.abs(balance).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {expenses.map(exp => {
-                      const key = `${apt.id}-${exp.month}`;
-                      const isPaid = payments[key];
-                      return (
-                        <button
-                          key={key}
-                          onClick={() => recordPayment(apt.id, exp.month)}
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-all flex justify-between items-center ${
-                            isPaid ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'
-                          }`}
-                        >
-                          <span className="text-white text-sm">{exp.month}: ₹{exp.perApt.toFixed(2)}</span>
-                          <span className="text-xs font-bold">{isPaid ? '✓ PAID' : 'PENDING'}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+            <button class="tab-btn" onclick="switchTab('payments')">✓ Payments</button>
+            <button class="tab-btn" onclick="switchTab('reports')">📄 Reports</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="info-banner">
+                <strong>Current Month:</strong> <span id="currentMonth"></span><br>
+                <strong>Collection Status:</strong> <span id="collectionStatus">₹0 / ₹3,000</span>
+                <span class="collected-badge" id="collectionPercent">0%</span>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Collection History</div>
+                <div id="historyList"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Record Collection</div>
+                <div class="form-group">
+                    <label class="form-label">Flat Name</label>
+                    <select id="flatSelect" class="form-input">
+                        <option value="">Select Flat</option>
+                    </select>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Reports Tab */}
-      {activeTab === 'reports' && (
-        <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6">
-          <h2 className="text-xl font-bold text-white mb-4">Owner Statements</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {apartments.map(apt => {
-              const { owes, paid, balance } = getAptBalance(apt.id);
-              return (
-                <div key={apt.id} className="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all">
-                  <p className="text-white font-bold text-sm mb-2">{apt.name}</p>
-                  <p className="text-purple-300 text-xs mb-3">{apt.owner}</p>
-                  <div className="space-y-1 mb-3 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-purple-300">Due:</span>
-                      <span className="text-white">₹{owes.toFixed(0)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-purple-300">Paid:</span>
-                      <span className="text-green-400">₹{paid.toFixed(0)}</span>
-                    </div>
-                    <div className="flex justify-between pt-1 border-t border-white/10">
-                      <span className="text-purple-300 font-bold">Balance:</span>
-                      <span className={`font-bold ${balance > 0 ? 'text-red-400' : 'text-green-400'}`}>₹{balance.toFixed(0)}</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => downloadReport(apt.id)}
-                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white text-xs py-2 rounded-lg font-semibold transition-all"
-                  >
-                    <Download className="w-3 h-3 inline mr-1" />
-                    Statement
-                  </button>
+                <div class="form-group">
+                    <label class="form-label">Month</label>
+                    <input type="month" id="collectionMonth" class="form-input">
                 </div>
-              );
-            })}
-          </div>
+                <div class="form-group">
+                    <label class="form-label">Amount Collected</label>
+                    <input type="number" id="collectionAmount" class="form-input" placeholder="300" value="300">
+                </div>
+                <button class="btn" onclick="recordCollection()">💰 Record Payment</button>
+            </div>
         </div>
-      )}
+
+        <!-- Payments Tab -->
+        <div id="payments" class="tab-content">
+            <div class="info-banner">
+                <strong>Month:</strong> <span id="paymentMonth"></span><br>
+                Status: <strong id="paymentStatus">₹0 / ₹3,000</strong>
+            </div>
+            <div class="section">
+                <div class="section-title">Payment Status by Flat</div>
+                <div class="apt-grid" id="paymentGrid"></div>
+            </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="reports" class="tab-content">
+            <div class="section">
+                <div class="section-title">Flat-wise Reports</div>
+                <div class="apt-grid" id="reportGrid"></div>
+            </div>
+        </div>
     </div>
-  );
-}
+
+    <div class="bottom-nav">
+        <button class="nav-btn active" onclick="switchTab('dashboard')">📊</button>
+        <button class="nav-btn" onclick="switchTab('payments')">✓</button>
+        <button class="nav-btn" onclick="switchTab('reports')">📄</button>
+    </div>
+
+    <script>
+        const apartments = {
+            "Flat G1": "Shiva Shanker",
+            "Flat G2": "Ashish R",
+            "Flat 101": "Girish Babu C",
+            "Flat 102": "Bala Krishnan",
+            "Flat 201": "Srinivas",
+            "Flat 202": "Kalaiselvi M",
+            "Flat 301": "Girish V",
+            "Flat 302": "Balaram",
+            "Flat 401": "Pavan",
+            "Flat 402": "Suresh"
+        };
+
+        const MONTHLY_TARGET = 3000;
+        const PER_FLAT = 300;
+
+        let collections = JSON.parse(localStorage.getItem('collections')) || [];
+
+        function setCurrentMonth() {
+            const today = new Date();
+            const month = today.toISOString().slice(0, 7);
+            document.getElementById('collectionMonth').value = month;
+            document.getElementById('currentMonth').textContent = new Date(month + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+            document.getElementById('paymentMonth').textContent = new Date(month + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+        }
+
+        function populateFlatSelect() {
+            const select = document.getElementById('flatSelect');
+            Object.keys(apartments).forEach(flat => {
+                const option = document.createElement('option');
+                option.value = flat;
+                option.textContent = flat + ' - ' + apartments[flat];
+                select.appendChild(option);
+            });
+        }
+
+        function saveData() {
+            localStorage.setItem('collections', JSON.stringify(collections));
+        }
+
+        function recordCollection() {
+            const flat = document.getElementById('flatSelect').value;
+            const month = document.getElementById('collectionMonth').value;
+            const amount = parseFloat(document.getElementById('collectionAmount').value);
+
+            if (!flat || !month || !amount) {
+                alert('Please fill all fields');
+                return;
+            }
+
+            collections.push({
+                id: Date.now(),
+                flat,
+                month,
+                amount,
+                date: new Date().toLocaleDateString('en-IN')
+            });
+
+            saveData();
+            document.getElementById('flatSelect').value = '';
+            document.getElementById('collectionAmount').value = '300';
+            updateUI();
+            alert('✓ Payment recorded successfully!');
+        }
+
+        function getMonthCollections(month) {
+            return collections.filter(c => c.month === month);
+        }
+
+        function getMonthTotal(month) {
+            return getMonthCollections(month).reduce((sum, c) => sum + c.amount, 0);
+        }
+
+        function getFlatCollected(flat, month) {
+            return collections.find(c => c.flat === flat && c.month === month);
+        }
+
+        function getCurrentMonth() {
+            return new Date().toISOString().slice(0, 7);
+        }
+
+        function updateUI() {
+            const currentMonth = getCurrentMonth();
+            const monthTotal = getMonthTotal(currentMonth);
+            const pending = Math.max(0, MONTHLY_TARGET - monthTotal);
+
+            // Update summary cards
+            document.getElementById('totalCollected').textContent = '₹' + monthTotal.toLocaleString('en-IN');
+            document.getElementById('totalPending').textContent = '₹' + pending.toLocaleString('en-IN');
+            document.getElementById('collectionStatus').textContent = `₹${monthTotal.toLocaleString('en-IN')} / ₹${MONTHLY_TARGET.toLocaleString('en-IN')}`;
+            
+            const percent = Math.min(100, Math.round((monthTotal / MONTHLY_TARGET) * 100));
+            document.getElementById('collectionPercent').textContent = percent + '%';
+
+            // Update history
+            const historyList = document.getElementById('historyList');
+            const monthCollections = getMonthCollections(currentMonth);
+            if (monthCollections.length === 0) {
+                historyList.innerHTML = '<div class="empty-state">No collections recorded yet</div>';
+            } else {
+                historyList.innerHTML = monthCollections.slice().reverse().map(c => `
+                    <div class="expense-item">
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 4px;">${c.flat}</div>
+                            <div style="font-size: 12px; opacity: 0.7;">${apartments[c.flat]} • ${c.date}</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="font-weight: 600; color: #10b981;">₹${c.amount.toLocaleString('en-IN')}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Update payment status grid
+            const payGrid = document.getElementById('paymentGrid');
+            payGrid.innerHTML = Object.keys(apartments).map(flat => {
+                const collected = getFlatCollected(flat, currentMonth);
+                return `
+                    <div class="apt-card">
+                        <div class="apt-name">${flat}</div>
+                        <div class="apt-owner">${apartments[flat]}</div>
+                        <div class="apt-balance ${collected ? 'paid' : ''}">
+                            ${collected ? '✓ PAID' : 'PENDING'}
+                        </div>
+                        <div style="font-size: 12px; opacity: 0.7;">
+                            ${collected ? `₹${collected.amount.toLocaleString('en-IN')} on ${collected.date}` : '₹0'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Update report grid
+            const repGrid = document.getElementById('reportGrid');
+            const allMonths = new Set(collections.map(c => c.month));
+            repGrid.innerHTML = Object.keys(apartments).map(flat => {
+                let totalCollected = 0;
+                let totalDue = 0;
+                Array.from(allMonths).forEach(month => {
+                    totalDue += PER_FLAT;
+                    const col = getFlatCollected(flat, month);
+                    if (col) totalCollected += col.amount;
+                });
+                const balance = totalDue - totalCollected;
+                
+                return `
+                    <div class="apt-card">
+                        <div class="apt-name">${flat}</div>
+                        <div class="apt-owner">${apartments[flat]}</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; font-size: 12px;">
+                            <div>
+                                <div style="opacity: 0.7; margin-bottom: 4px;">Due</div>
+                                <div style="font-weight: 600;">₹${totalDue.toLocaleString('en-IN')}</div>
+                            </div>
+                            <div>
+                                <div style="opacity: 0.7; margin-bottom: 4px;">Paid</div>
+                                <div style="font-weight: 600; color: #10b981;">₹${totalCollected.toLocaleString('en-IN')}</div>
+                            </div>
+                        </div>
+                        <div style="padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
+                            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">Balance</div>
+                            <div style="font-weight: 600; color: ${balance > 0 ? '#ef4444' : '#10b981'};">₹${balance.toLocaleString('en-IN')}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('paymentStatus').textContent = `₹${monthTotal.toLocaleString('en-IN')} / ₹${MONTHLY_TARGET.toLocaleString('en-IN')}`;
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(e => e.classList.remove('active'));
+
+            document.getElementById(tab).classList.add('active');
+            document.querySelector(`button[onclick="switchTab('${tab}')"]`).classList.add('active');
+            
+            const navBtns = document.querySelectorAll('.nav-btn');
+            const tabs = ['dashboard', 'payments', 'reports'];
+            const idx = tabs.indexOf(tab);
+            if (idx >= 0) navBtns[idx].classList.add('active');
+        }
+
+        // Initialize
+        setCurrentMonth();
+        populateFlatSelect();
+        updateUI();
+
+        // Service worker for offline
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:text/javascript,self.addEventListener("install",e=>self.skipWaiting());self.addEventListener("activate",e=>self.clients.claim());');
+        }
+    </script>
+
+    <link rel="manifest" href="data:application/json,{
+        \"name\": \"Sri Aadya Nilaya - Maintenance\",
+        \"short_name\": \"Sri Aadya\",
+        \"start_url\": \"./\",
+        \"display\": \"standalone\",
+        \"background_color\": \"#111827\",
+        \"theme_color\": \"#8b5cf6\",
+        \"icons\": [{
+            \"src\": \"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%238b5cf6' width='192' height='192'/><text x='50%' y='50%' font-size='100' fill='white' text-anchor='middle' dy='.3em'>🏘️</text></svg>\",
+            \"sizes\": \"192x192\",
+            \"type\": \"image/svg+xml\",
+            \"purpose\": \"any\"
+        }]
+    }">
+</body>
+</html>
