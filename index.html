@@ -52,11 +52,13 @@
         .card.success { border-left-color: #10b981; }
         .card.danger { border-left-color: #ef4444; }
         .card.warning { border-left-color: #f59e0b; }
+        .card.info { border-left-color: #3b82f6; }
         
         .card-label { font-size: 11px; opacity: 0.8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
         .card-value { font-size: 24px; font-weight: bold; }
         .card-value.success { color: #10b981; }
         .card-value.danger { color: #ef4444; }
+        .card-value.info { color: #3b82f6; }
         
         .tabs {
             display: flex;
@@ -67,7 +69,7 @@
         }
         .tab-btn {
             flex: 1;
-            min-width: 90px;
+            min-width: 85px;
             padding: 10px 12px;
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.2);
@@ -132,7 +134,15 @@
         }
         .btn:active { transform: scale(0.98); }
         
-        .expense-item {
+        .btn-delete {
+            background: #ef4444;
+            width: auto;
+            padding: 6px 12px;
+            font-size: 12px;
+            margin-top: 0;
+        }
+        
+        .expense-item, .collection-item {
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.1);
             padding: 12px;
@@ -143,36 +153,55 @@
             align-items: center;
         }
         
-        .apt-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
+        .expense-category {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(139, 92, 246, 0.3);
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 8px;
         }
-        .apt-card {
+        
+        .expense-breakdown {
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.1);
             padding: 14px;
             border-radius: 10px;
+            margin-bottom: 12px;
         }
-        .apt-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
-        .apt-owner { font-size: 12px; opacity: 0.7; margin-bottom: 8px; }
-        .apt-balance { font-size: 18px; font-weight: bold; color: #ef4444; margin-bottom: 8px; }
-        .apt-balance.paid { color: #10b981; }
         
-        .payment-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            background: rgba(239, 68, 68, 0.3);
-            border: 1px solid rgba(239, 68, 68, 0.5);
-            border-radius: 6px;
-            font-size: 10px;
-            margin: 2px;
-            cursor: pointer;
-            transition: all 0.2s;
+        .breakdown-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        .payment-badge.paid {
-            background: rgba(16, 185, 129, 0.3);
-            border-color: rgba(16, 185, 129, 0.5);
+        
+        .breakdown-row:last-child { border-bottom: none; }
+        
+        .breakdown-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .breakdown-value {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 2px solid rgba(255,255,255,0.1);
+            font-weight: bold;
+            font-size: 16px;
         }
         
         .bottom-nav {
@@ -197,16 +226,6 @@
         }
         .nav-btn.active { color: #8b5cf6; }
         
-        .delete-btn {
-            background: #ef4444;
-            border: none;
-            color: #fff;
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        
         .empty-state {
             text-align: center;
             padding: 40px 20px;
@@ -223,20 +242,34 @@
             line-height: 1.5;
         }
         
-        .collected-badge {
-            display: inline-block;
-            background: #10b981;
+        .icon-label { font-size: 18px; margin-right: 4px; }
+        
+        .month-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .month-btn {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
             color: #fff;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
             font-weight: 600;
-            margin-top: 4px;
+            transition: all 0.3s;
+        }
+        
+        .month-btn.active {
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            border-color: transparent;
         }
         
         @media (max-width: 480px) {
             .summary-grid { grid-template-columns: 1fr; }
-            .apt-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -249,258 +282,479 @@
         </div>
 
         <div class="summary-grid">
-            <div class="card">
-                <div class="card-label">Monthly Target</div>
-                <div class="card-value">₹3,000</div>
+            <div class="card info">
+                <div class="card-label">Opening Balance</div>
+                <div class="card-value info" id="openingBalance">₹70,000</div>
             </div>
             <div class="card success">
-                <div class="card-label">Collected</div>
-                <div class="card-value success" id="totalCollected">₹0</div>
+                <div class="card-label">Collected This Month</div>
+                <div class="card-value success" id="monthCollected">₹0</div>
             </div>
             <div class="card danger">
-                <div class="card-label">Pending</div>
-                <div class="card-value danger" id="totalPending">₹3,000</div>
+                <div class="card-label">Expenses This Month</div>
+                <div class="card-value danger" id="monthExpenses">₹0</div>
             </div>
             <div class="card warning">
-                <div class="card-label">Per Flat</div>
-                <div class="card-value">₹300</div>
+                <div class="card-label">Outstanding Balance</div>
+                <div class="card-value" id="outstandingBalance">₹70,000</div>
             </div>
         </div>
 
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
-            <button class="tab-btn" onclick="switchTab('payments')">✓ Payments</button>
-            <button class="tab-btn" onclick="switchTab('reports')">📄 Reports</button>
+            <button class="tab-btn" onclick="switchTab('expenses')">💸 Expenses</button>
+            <button class="tab-btn" onclick="switchTab('collections')">✓ Collections</button>
+            <button class="tab-btn" onclick="switchTab('history')">📜 History</button>
         </div>
 
         <!-- Dashboard Tab -->
         <div id="dashboard" class="tab-content active">
             <div class="info-banner">
                 <strong>Current Month:</strong> <span id="currentMonth"></span><br>
-                <strong>Collection Status:</strong> <span id="collectionStatus">₹0 / ₹3,000</span>
-                <span class="collected-badge" id="collectionPercent">0%</span>
+                <strong>Monthly Target:</strong> ₹3,000
             </div>
 
             <div class="section">
-                <div class="section-title">Collection History</div>
-                <div id="historyList"></div>
+                <div class="section-title">Expense Breakdown</div>
+                <div class="expense-breakdown" id="expenseBreakdown"></div>
             </div>
 
             <div class="section">
-                <div class="section-title">Record Collection</div>
+                <div class="section-title">Collection Summary</div>
+                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 14px; border-radius: 10px;">
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <span>Collections This Month</span>
+                        <span style="font-weight: 600; color: #10b981;" id="dashCollected">₹0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <span>Target Collection</span>
+                        <span style="font-weight: 600;">₹3,000</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0;">
+                        <span>Progress</span>
+                        <span style="font-weight: 600;" id="collectionPercent">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Recent Transactions</div>
+                <div id="recentTransactions"></div>
+            </div>
+        </div>
+
+        <!-- Expenses Tab -->
+        <div id="expenses" class="tab-content">
+            <div class="info-banner">
+                <strong>Month:</strong> <span id="expenseMonth"></span><br>
+                <strong>Total Expenses:</strong> <span id="totalExpenseAmount">₹0</span>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Add Expense</div>
                 <div class="form-group">
-                    <label class="form-label">Flat Name</label>
-                    <select id="flatSelect" class="form-input">
-                        <option value="">Select Flat</option>
+                    <label class="form-label">Month</label>
+                    <input type="month" id="newExpenseMonth" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select id="expenseCategory" class="form-input">
+                        <option value="Watchman Salary">👮 Watchman Salary</option>
+                        <option value="Power Bill">⚡ Power Bill</option>
+                        <option value="Water Bill">💧 Water Bill</option>
+                        <option value="Maintenance">🔧 Maintenance</option>
+                        <option value="Cleaning">🧹 Cleaning</option>
+                        <option value="Repairs">🛠️ Repairs</option>
+                        <option value="Other">📋 Other</option>
                     </select>
                 </div>
                 <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input type="text" id="expenseDescription" class="form-input" placeholder="e.g., Monthly salary for Watchman">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Amount</label>
+                    <input type="number" id="expenseAmount" class="form-input" placeholder="0.00">
+                </div>
+                <button class="btn" onclick="addExpense()">➕ Add Expense</button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Expenses for Current Month</div>
+                <div id="expensesList"></div>
+            </div>
+        </div>
+
+        <!-- Collections Tab -->
+        <div id="collections" class="tab-content">
+            <div class="info-banner">
+                <strong>Month:</strong> <span id="collectionMonth"></span><br>
+                Collections collected so far
+            </div>
+            <div class="section">
+                <div class="section-title">Record Collection</div>
+                <div class="form-group">
                     <label class="form-label">Month</label>
-                    <input type="month" id="collectionMonth" class="form-input">
+                    <input type="month" id="newCollectionMonth" class="form-input">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Amount Collected</label>
-                    <input type="number" id="collectionAmount" class="form-input" placeholder="300" value="300">
+                    <input type="number" id="collectionAmount" class="form-input" placeholder="Enter amount">
                 </div>
-                <button class="btn" onclick="recordCollection()">💰 Record Payment</button>
+                <div class="form-group">
+                    <label class="form-label">Notes (Optional)</label>
+                    <input type="text" id="collectionNotes" class="form-input" placeholder="e.g., Cash collected from flats">
+                </div>
+                <button class="btn" onclick="recordCollection()">💰 Record Collection</button>
+            </div>
+            <div class="section">
+                <div class="section-title">Collections This Month</div>
+                <div id="collectionsList"></div>
             </div>
         </div>
 
-        <!-- Payments Tab -->
-        <div id="payments" class="tab-content">
-            <div class="info-banner">
-                <strong>Month:</strong> <span id="paymentMonth"></span><br>
-                Status: <strong id="paymentStatus">₹0 / ₹3,000</strong>
-            </div>
+        <!-- History Tab -->
+        <div id="history" class="tab-content">
+            <div class="month-selector" id="monthSelector"></div>
+            
             <div class="section">
-                <div class="section-title">Payment Status by Flat</div>
-                <div class="apt-grid" id="paymentGrid"></div>
+                <div class="section-title">Monthly Summary</div>
+                <div id="historySummary"></div>
             </div>
-        </div>
 
-        <!-- Reports Tab -->
-        <div id="reports" class="tab-content">
             <div class="section">
-                <div class="section-title">Flat-wise Reports</div>
-                <div class="apt-grid" id="reportGrid"></div>
+                <div class="section-title">All Transactions</div>
+                <div id="historyList"></div>
             </div>
         </div>
     </div>
 
     <div class="bottom-nav">
         <button class="nav-btn active" onclick="switchTab('dashboard')">📊</button>
-        <button class="nav-btn" onclick="switchTab('payments')">✓</button>
-        <button class="nav-btn" onclick="switchTab('reports')">📄</button>
+        <button class="nav-btn" onclick="switchTab('expenses')">💸</button>
+        <button class="nav-btn" onclick="switchTab('collections')">✓</button>
+        <button class="nav-btn" onclick="switchTab('history')">📜</button>
     </div>
 
     <script>
-        const apartments = {
-            "Flat G1": "Shiva Shanker",
-            "Flat G2": "Ashish R",
-            "Flat 101": "Girish Babu C",
-            "Flat 102": "Bala Krishnan",
-            "Flat 201": "Srinivas",
-            "Flat 202": "Kalaiselvi M",
-            "Flat 301": "Girish V",
-            "Flat 302": "Balaram",
-            "Flat 401": "Pavan",
-            "Flat 402": "Suresh"
+        const MONTHLY_TARGET = 3000;
+        const OPENING_BALANCE = 70000;
+
+        const expenseCategories = {
+            "Watchman Salary": "👮",
+            "Power Bill": "⚡",
+            "Water Bill": "💧",
+            "Maintenance": "🔧",
+            "Cleaning": "🧹",
+            "Repairs": "🛠️",
+            "Other": "📋"
         };
 
-        const MONTHLY_TARGET = 3000;
-        const PER_FLAT = 300;
-
+        let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
         let collections = JSON.parse(localStorage.getItem('collections')) || [];
+        let selectedHistoryMonth = new Date().toISOString().slice(0, 7);
 
         function setCurrentMonth() {
             const today = new Date();
             const month = today.toISOString().slice(0, 7);
-            document.getElementById('collectionMonth').value = month;
+            document.getElementById('newExpenseMonth').value = month;
+            document.getElementById('newCollectionMonth').value = month;
             document.getElementById('currentMonth').textContent = new Date(month + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
-            document.getElementById('paymentMonth').textContent = new Date(month + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
-        }
-
-        function populateFlatSelect() {
-            const select = document.getElementById('flatSelect');
-            Object.keys(apartments).forEach(flat => {
-                const option = document.createElement('option');
-                option.value = flat;
-                option.textContent = flat + ' - ' + apartments[flat];
-                select.appendChild(option);
-            });
+            document.getElementById('expenseMonth').textContent = new Date(month + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+            document.getElementById('collectionMonth').textContent = new Date(month + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+            selectedHistoryMonth = month;
         }
 
         function saveData() {
+            localStorage.setItem('expenses', JSON.stringify(expenses));
             localStorage.setItem('collections', JSON.stringify(collections));
         }
 
-        function recordCollection() {
-            const flat = document.getElementById('flatSelect').value;
-            const month = document.getElementById('collectionMonth').value;
-            const amount = parseFloat(document.getElementById('collectionAmount').value);
+        function addExpense() {
+            const month = document.getElementById('newExpenseMonth').value;
+            const category = document.getElementById('expenseCategory').value;
+            const description = document.getElementById('expenseDescription').value;
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
 
-            if (!flat || !month || !amount) {
+            if (!month || !category || !amount) {
+                alert('Please fill all required fields');
+                return;
+            }
+
+            expenses.push({
+                id: Date.now(),
+                month,
+                category,
+                description,
+                amount,
+                date: new Date().toLocaleDateString('en-IN')
+            });
+
+            saveData();
+            document.getElementById('expenseDescription').value = '';
+            document.getElementById('expenseAmount').value = '';
+            updateUI();
+            alert('✓ Expense added successfully!');
+        }
+
+        function deleteExpense(id) {
+            if (confirm('Delete this expense?')) {
+                expenses = expenses.filter(e => e.id !== id);
+                saveData();
+                updateUI();
+            }
+        }
+
+        function recordCollection() {
+            const month = document.getElementById('newCollectionMonth').value;
+            const amount = parseFloat(document.getElementById('collectionAmount').value);
+            const notes = document.getElementById('collectionNotes').value;
+
+            if (!month || !amount) {
                 alert('Please fill all fields');
                 return;
             }
 
             collections.push({
                 id: Date.now(),
-                flat,
                 month,
                 amount,
+                notes,
                 date: new Date().toLocaleDateString('en-IN')
             });
 
             saveData();
-            document.getElementById('flatSelect').value = '';
-            document.getElementById('collectionAmount').value = '300';
+            document.getElementById('collectionAmount').value = '';
+            document.getElementById('collectionNotes').value = '';
             updateUI();
-            alert('✓ Payment recorded successfully!');
+            alert('✓ Collection recorded successfully!');
+        }
+
+        function deleteCollection(id) {
+            if (confirm('Delete this collection?')) {
+                collections = collections.filter(c => c.id !== id);
+                saveData();
+                updateUI();
+            }
+        }
+
+        function getMonthExpenses(month) {
+            return expenses.filter(e => e.month === month);
+        }
+
+        function getMonthExpensesByCategory(month) {
+            const result = {};
+            getMonthExpenses(month).forEach(e => {
+                if (!result[e.category]) result[e.category] = 0;
+                result[e.category] += e.amount;
+            });
+            return result;
+        }
+
+        function getMonthExpenseTotal(month) {
+            return getMonthExpenses(month).reduce((sum, e) => sum + e.amount, 0);
         }
 
         function getMonthCollections(month) {
             return collections.filter(c => c.month === month);
         }
 
-        function getMonthTotal(month) {
+        function getMonthCollectionTotal(month) {
             return getMonthCollections(month).reduce((sum, c) => sum + c.amount, 0);
-        }
-
-        function getFlatCollected(flat, month) {
-            return collections.find(c => c.flat === flat && c.month === month);
         }
 
         function getCurrentMonth() {
             return new Date().toISOString().slice(0, 7);
         }
 
+        function getAllMonths() {
+            const months = new Set([...expenses.map(e => e.month), ...collections.map(c => c.month)]);
+            return Array.from(months).sort().reverse();
+        }
+
+        function calculateBalance(month) {
+            const monthExpenses = getMonthExpenseTotal(month);
+            const monthCollections = getMonthCollectionTotal(month);
+            return monthCollections - monthExpenses;
+        }
+
+        function getTotalBalance() {
+            let totalBalance = OPENING_BALANCE;
+            getAllMonths().forEach(month => {
+                totalBalance += calculateBalance(month);
+            });
+            return totalBalance;
+        }
+
         function updateUI() {
             const currentMonth = getCurrentMonth();
-            const monthTotal = getMonthTotal(currentMonth);
-            const pending = Math.max(0, MONTHLY_TARGET - monthTotal);
+            const monthCollected = getMonthCollectionTotal(currentMonth);
+            const monthExpense = getMonthExpenseTotal(currentMonth);
+            const totalBalance = getTotalBalance();
 
             // Update summary cards
-            document.getElementById('totalCollected').textContent = '₹' + monthTotal.toLocaleString('en-IN');
-            document.getElementById('totalPending').textContent = '₹' + pending.toLocaleString('en-IN');
-            document.getElementById('collectionStatus').textContent = `₹${monthTotal.toLocaleString('en-IN')} / ₹${MONTHLY_TARGET.toLocaleString('en-IN')}`;
-            
-            const percent = Math.min(100, Math.round((monthTotal / MONTHLY_TARGET) * 100));
+            document.getElementById('monthCollected').textContent = '₹' + monthCollected.toLocaleString('en-IN');
+            document.getElementById('monthExpenses').textContent = '₹' + monthExpense.toLocaleString('en-IN');
+            document.getElementById('outstandingBalance').textContent = '₹' + totalBalance.toLocaleString('en-IN');
+
+            // Dashboard
+            document.getElementById('dashCollected').textContent = '₹' + monthCollected.toLocaleString('en-IN');
+            const percent = Math.min(100, Math.round((monthCollected / MONTHLY_TARGET) * 100));
             document.getElementById('collectionPercent').textContent = percent + '%';
 
-            // Update history
-            const historyList = document.getElementById('historyList');
-            const monthCollections = getMonthCollections(currentMonth);
-            if (monthCollections.length === 0) {
-                historyList.innerHTML = '<div class="empty-state">No collections recorded yet</div>';
+            // Expense breakdown
+            const breakdown = getMonthExpensesByCategory(currentMonth);
+            let breakdownHTML = '';
+            Object.keys(breakdown).forEach(cat => {
+                breakdownHTML += `
+                    <div class="breakdown-row">
+                        <div class="breakdown-label">
+                            <span class="icon-label">${expenseCategories[cat] || '📋'}</span>
+                            ${cat}
+                        </div>
+                        <div class="breakdown-value">₹${breakdown[cat].toLocaleString('en-IN')}</div>
+                    </div>
+                `;
+            });
+            if (Object.keys(breakdown).length === 0) {
+                breakdownHTML = '<div class="empty-state" style="padding: 20px;">No expenses recorded</div>';
             } else {
-                historyList.innerHTML = monthCollections.slice().reverse().map(c => `
+                breakdownHTML += `
+                    <div class="total-row">
+                        <span>Total Expenses</span>
+                        <span style="color: #ef4444;">₹${monthExpense.toLocaleString('en-IN')}</span>
+                    </div>
+                `;
+            }
+            document.getElementById('expenseBreakdown').innerHTML = breakdownHTML;
+
+            // Recent transactions
+            const allTransactions = [];
+            getMonthExpenses(currentMonth).forEach(e => allTransactions.push({ type: 'expense', ...e }));
+            getMonthCollections(currentMonth).forEach(c => allTransactions.push({ type: 'collection', ...c }));
+            allTransactions.sort((a, b) => b.id - a.id);
+
+            let recentHTML = '';
+            if (allTransactions.length === 0) {
+                recentHTML = '<div class="empty-state">No transactions yet</div>';
+            } else {
+                recentHTML = allTransactions.slice(0, 5).map(t => `
+                    <div class="collection-item">
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 4px;">
+                                ${t.type === 'expense' ? `${expenseCategories[t.category] || '📋'} ${t.category}` : `💰 Collection`}
+                            </div>
+                            <div style="font-size: 12px; opacity: 0.7;">${t.description || t.notes || ''} • ${t.date}</div>
+                        </div>
+                        <div style="font-weight: 600; color: ${t.type === 'expense' ? '#ef4444' : '#10b981'};">
+                            ${t.type === 'expense' ? '-' : '+'}₹${t.amount.toLocaleString('en-IN')}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            document.getElementById('recentTransactions').innerHTML = recentHTML;
+
+            // Expenses list
+            const expList = document.getElementById('expensesList');
+            const monthExp = getMonthExpenses(currentMonth);
+            document.getElementById('totalExpenseAmount').textContent = '₹' + getMonthExpenseTotal(currentMonth).toLocaleString('en-IN');
+            if (monthExp.length === 0) {
+                expList.innerHTML = '<div class="empty-state">No expenses recorded</div>';
+            } else {
+                expList.innerHTML = monthExp.slice().reverse().map(e => `
                     <div class="expense-item">
                         <div>
-                            <div style="font-weight: 600; margin-bottom: 4px;">${c.flat}</div>
-                            <div style="font-size: 12px; opacity: 0.7;">${apartments[c.flat]} • ${c.date}</div>
+                            <div style="margin-bottom: 4px;">
+                                <span class="expense-category">${e.category}</span>
+                            </div>
+                            <div style="font-weight: 600; margin-bottom: 4px;">${e.description}</div>
+                            <div style="font-size: 12px; opacity: 0.7;">${e.date}</div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <div style="font-weight: 600; color: #10b981;">₹${c.amount.toLocaleString('en-IN')}</div>
+                            <div style="font-weight: 600; color: #ef4444;">₹${e.amount.toLocaleString('en-IN')}</div>
+                            <button class="btn-delete" onclick="deleteExpense(${e.id})">Delete</button>
                         </div>
                     </div>
                 `).join('');
             }
 
-            // Update payment status grid
-            const payGrid = document.getElementById('paymentGrid');
-            payGrid.innerHTML = Object.keys(apartments).map(flat => {
-                const collected = getFlatCollected(flat, currentMonth);
-                return `
-                    <div class="apt-card">
-                        <div class="apt-name">${flat}</div>
-                        <div class="apt-owner">${apartments[flat]}</div>
-                        <div class="apt-balance ${collected ? 'paid' : ''}">
-                            ${collected ? '✓ PAID' : 'PENDING'}
+            // Collections list
+            const colList = document.getElementById('collectionsList');
+            const monthCol = getMonthCollections(currentMonth);
+            if (monthCol.length === 0) {
+                colList.innerHTML = '<div class="empty-state">No collections recorded</div>';
+            } else {
+                colList.innerHTML = monthCol.slice().reverse().map(c => `
+                    <div class="collection-item">
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 4px;">💰 Collection</div>
+                            <div style="font-size: 12px; opacity: 0.7;">${c.notes || 'Collection recorded'} • ${c.date}</div>
                         </div>
-                        <div style="font-size: 12px; opacity: 0.7;">
-                            ${collected ? `₹${collected.amount.toLocaleString('en-IN')} on ${collected.date}` : '₹0'}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            // Update report grid
-            const repGrid = document.getElementById('reportGrid');
-            const allMonths = new Set(collections.map(c => c.month));
-            repGrid.innerHTML = Object.keys(apartments).map(flat => {
-                let totalCollected = 0;
-                let totalDue = 0;
-                Array.from(allMonths).forEach(month => {
-                    totalDue += PER_FLAT;
-                    const col = getFlatCollected(flat, month);
-                    if (col) totalCollected += col.amount;
-                });
-                const balance = totalDue - totalCollected;
-                
-                return `
-                    <div class="apt-card">
-                        <div class="apt-name">${flat}</div>
-                        <div class="apt-owner">${apartments[flat]}</div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; font-size: 12px;">
-                            <div>
-                                <div style="opacity: 0.7; margin-bottom: 4px;">Due</div>
-                                <div style="font-weight: 600;">₹${totalDue.toLocaleString('en-IN')}</div>
-                            </div>
-                            <div>
-                                <div style="opacity: 0.7; margin-bottom: 4px;">Paid</div>
-                                <div style="font-weight: 600; color: #10b981;">₹${totalCollected.toLocaleString('en-IN')}</div>
-                            </div>
-                        </div>
-                        <div style="padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
-                            <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">Balance</div>
-                            <div style="font-weight: 600; color: ${balance > 0 ? '#ef4444' : '#10b981'};">₹${balance.toLocaleString('en-IN')}</div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="font-weight: 600; color: #10b981;">+₹${c.amount.toLocaleString('en-IN')}</div>
+                            <button class="btn-delete" onclick="deleteCollection(${c.id})">Delete</button>
                         </div>
                     </div>
-                `;
-            }).join('');
+                `).join('');
+            }
 
-            document.getElementById('paymentStatus').textContent = `₹${monthTotal.toLocaleString('en-IN')} / ₹${MONTHLY_TARGET.toLocaleString('en-IN')}`;
+            // History month selector
+            const monthSel = document.getElementById('monthSelector');
+            monthSel.innerHTML = getAllMonths().map(month => `
+                <button class="month-btn ${month === selectedHistoryMonth ? 'active' : ''}" onclick="selectHistoryMonth('${month}')">
+                    ${new Date(month + '-01').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })}
+                </button>
+            `).join('');
+
+            // History summary
+            const histSum = document.getElementById('historySummary');
+            const selectedExp = getMonthExpenseTotal(selectedHistoryMonth);
+            const selectedCol = getMonthCollectionTotal(selectedHistoryMonth);
+            const monthBalance = calculateBalance(selectedHistoryMonth);
+            
+            histSum.innerHTML = `
+                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 14px; border-radius: 10px;">
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <span>Collections</span>
+                        <span style="font-weight: 600; color: #10b981;">+₹${selectedCol.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <span>Expenses</span>
+                        <span style="font-weight: 600; color: #ef4444;">-₹${selectedExp.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; margin-top: 8px; padding-top: 8px; border-top: 2px solid rgba(255,255,255,0.1);">
+                        <span style="font-weight: 600;">Net Change</span>
+                        <span style="font-weight: 600; color: ${monthBalance >= 0 ? '#10b981' : '#ef4444'};">${monthBalance >= 0 ? '+' : ''}₹${monthBalance.toLocaleString('en-IN')}</span>
+                    </div>
+                </div>
+            `;
+
+            // History list
+            const histList = document.getElementById('historyList');
+            const selectedExpenses = getMonthExpenses(selectedHistoryMonth);
+            const selectedCollections = getMonthCollections(selectedHistoryMonth);
+            const allHist = [];
+            selectedExpenses.forEach(e => allHist.push({ type: 'expense', ...e }));
+            selectedCollections.forEach(c => allHist.push({ type: 'collection', ...c }));
+            allHist.sort((a, b) => b.id - a.id);
+
+            if (allHist.length === 0) {
+                histList.innerHTML = '<div class="empty-state">No transactions in this month</div>';
+            } else {
+                histList.innerHTML = allHist.map(t => `
+                    <div class="collection-item">
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 4px;">
+                                ${t.type === 'expense' ? `${expenseCategories[t.category] || '📋'} ${t.category}` : `💰 Collection`}
+                            </div>
+                            <div style="font-size: 12px; opacity: 0.7;">${t.description || t.notes || ''} • ${t.date}</div>
+                        </div>
+                        <div style="font-weight: 600; color: ${t.type === 'expense' ? '#ef4444' : '#10b981'};">
+                            ${t.type === 'expense' ? '-' : '+'}₹${t.amount.toLocaleString('en-IN')}
+                        </div>
+                    </div>
+                `).join('');
+            }
         }
 
         function switchTab(tab) {
@@ -512,14 +766,20 @@
             document.querySelector(`button[onclick="switchTab('${tab}')"]`).classList.add('active');
             
             const navBtns = document.querySelectorAll('.nav-btn');
-            const tabs = ['dashboard', 'payments', 'reports'];
+            const tabs = ['dashboard', 'expenses', 'collections', 'history'];
             const idx = tabs.indexOf(tab);
             if (idx >= 0) navBtns[idx].classList.add('active');
         }
 
+        function selectHistoryMonth(month) {
+            selectedHistoryMonth = month;
+            document.querySelectorAll('.month-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            updateUI();
+        }
+
         // Initialize
         setCurrentMonth();
-        populateFlatSelect();
         updateUI();
 
         // Service worker for offline
